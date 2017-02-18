@@ -1,9 +1,9 @@
 /*
  * gcc -DDBG main.c -o udpcl
- * echo -e '!@' | ./bin 192.168.1.250 49161 1 //rio_ds18b20
+ * echo -e '!@' | udpcl 192.168.0.102 49161 1 //rio_ds18b20
  * echo -e '!@' | ./bin 192.168.1.2 49180 1 //regsmp
  * echo -e '!@' | ./bin 192.168.1.2 49181 1 //regstp
- * echo -e '!@' | ./bin 192.168.1.250 49160 1 //pcf8574
+ * echo -e '!@' | ./bin 192.168.1.250 49183 1 //gwu74
  */
 
 #include "lib/app.h"
