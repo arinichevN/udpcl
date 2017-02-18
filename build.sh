@@ -7,7 +7,7 @@ CONF_DIR=/etc/controller
 
 MODE_DEBUG=-DMODE_DEBUG
 
-NONE=""
+NONE=-DNOTHINGANDNOT
 
 function move_bin {
 	([ -d $INST_DIR ] || mkdir $INST_DIR) && \
