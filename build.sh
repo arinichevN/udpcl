@@ -49,7 +49,5 @@ function full {
 	move_bin
 }
 
-
-
 f=$1
 ${f}
