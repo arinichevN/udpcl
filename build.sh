@@ -5,6 +5,7 @@ APP_DBG=`printf "%s_dbg" "$APP"`
 INST_DIR=/usr/sbin
 CONF_DIR=/etc/controller
 
+DEBUG_PARAM="-Wall -pedantic"
 MODE_DEBUG=-DMODE_DEBUG
 
 NONE=-DNOTHINGANDNOT
@@ -18,13 +19,13 @@ function move_bin {
 }
 
 function build_lib {
-	gcc $1 -c app.c -D_REENTRANT -lpthread && \
-	gcc $1 -c crc.c
-	gcc $1 -c timef.c && \
-	gcc $1 -c udp.c && \
-	gcc $1 -c util.c && \
+	gcc $1 -c app.c -D_REENTRANT $DEBUG_PARAM -lpthread && \
+	gcc $1 -c crc.c $DEBUG_PARAM && \
+	gcc $1 -c timef.c $DEBUG_PARAM && \
+	gcc $1 -c udp.c $DEBUG_PARAM && \
+	gcc $1 -c util.c $DEBUG_PARAM && \
 	cd acp && \
-	gcc $1 -c main.c && \
+	gcc $1 -c main.c $DEBUG_PARAM && \
 
 	cd ../ && \
 	echo "library: making archive..." && \
@@ -40,13 +41,18 @@ function build {
 	cd lib && \
 	build_lib $1 && \
 	cd ../ 
-	gcc -D_REENTRANT $1 main.c -o $2 -lpthread -L./lib -lpac && echo "Application successfully compiled. Launch command: sudo ./"$2
+	gcc -D_REENTRANT $1 main.c -o $2 $DEBUG_PARAM -lpthread -L./lib -lpac && echo "Application successfully compiled. Launch command: sudo ./"$2
 }
 
 
 function full {
+	DEBUG_PARAM=$NONE
 	build $MODE_DEBUG $APP && \
 	move_bin
+}
+
+function part_debug {
+	build $MODE_DEBUG $APP_DBG
 }
 
 f=$1

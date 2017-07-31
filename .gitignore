@@ -1,1 +1,4 @@
-/nbproject
+/.dep.inc
+/nbproject/
+/*.autosave
+/*_dbg
