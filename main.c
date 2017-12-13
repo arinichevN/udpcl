@@ -44,7 +44,6 @@ int main(int argc, char** argv) {
     acp_requestInit(&request);
     acp_requestSetCmd(&request, argv[1]);
     acp_requestStrCat(&request, estostr(argv[2]));
-    acp_requestPack(&request);
     putchar('\n');
     int r=acp_requestSend(&request, &peer_client);
     if (!r) {
