@@ -47,7 +47,7 @@ function build {
 
 function full {
 	DEBUG_PARAM=$NONE
-	build $MODE_DEBUG $APP && \
+	build $NONE $APP && \
 	move_bin
 }
 
