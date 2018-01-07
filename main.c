@@ -17,7 +17,7 @@ Peer peer_client = {.fd = &sock_fd, .addr_size = sizeof peer_client.addr};
 
 int main(int argc, char** argv) {
     if (argc != 6) {
-        fputs("usage: updcl command data hostaddress port rcv_timeout\n", stderr);
+        fprintf(stderr,"usage: %s command data hostaddress port rcv_timeout\n", argv[0]);
         return (EXIT_FAILURE);
     }
     int port = -1;
@@ -49,6 +49,9 @@ int main(int argc, char** argv) {
     if (!r) {
         fputs("failed to send buffer\n", stderr);
         return (EXIT_FAILURE);
+    }
+    if(tmo<=0){
+        return (EXIT_SUCCESS);
     }
     puts("waiting for response...");
     char buf[ACP_BUFFER_MAX_SIZE];
