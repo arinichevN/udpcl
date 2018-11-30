@@ -44,7 +44,9 @@ int main(int argc, char** argv) {
     acp_requestInit(&request);
     acp_requestSetCmd(&request, argv[1]);
     acp_requestStrCat(&request, estostr(argv[2]));
+#ifdef MODE_DEBUG
     putchar('\n');
+#endif
     int r=acp_requestSend(&request, &peer_client);
     if (!r) {
         fputs("failed to send buffer\n", stderr);
@@ -53,7 +55,9 @@ int main(int argc, char** argv) {
     if(tmo<=0){
         return (EXIT_SUCCESS);
     }
+#ifdef MODE_DEBUG
     puts("waiting for response...");
+#endif
     char buf[ACP_BUFFER_MAX_SIZE];
     int found = 0;
     while (!found) {
@@ -63,8 +67,8 @@ int main(int argc, char** argv) {
             unsigned int seq;
             int n = sscanf(buf, "%u" ACP_DELIMITER_COLUMN_STR "%d" ACP_DELIMITER_BLOCK_STR, &seq, &is_not_last);
             if (n == 2) {
-                int i;int block_count=0;
-                for(i=0;i<ACP_BUFFER_MAX_SIZE;i++){
+                int block_count=0;
+                for(int i=0;i<ACP_BUFFER_MAX_SIZE;i++){
                     if(buf[i]==ACP_DELIMITER_BLOCK){
                         block_count++;
                     }

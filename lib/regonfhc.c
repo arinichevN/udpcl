@@ -1,6 +1,7 @@
 
 #include "regonfhc.h"
 #include "reg.c"
+#include "green_light.c"
 
 static void controlEM(RegOnfHCEM *item, float output) {
     if (item->use) {
@@ -12,7 +13,16 @@ static void controlEM(RegOnfHCEM *item, float output) {
 void regonfhc_control(RegOnfHC *item) {
     switch (item->state) {
         case REG_INIT:
+            if (!greenLight_isGreen(&item->green_light)) {
+#ifdef MODE_DEBUG
+                fprintf(stdout,"%s(): light is not green\n", F);
+#endif
+                return;
+            }
             if (!acp_readSensorFTS(&item->sensor)) {
+#ifdef MODE_DEBUG
+                puts("reading from sensor failed");
+#endif
                 return;
             }
             item->tmr.ready = 0;
@@ -24,11 +34,11 @@ void regonfhc_control(RegOnfHC *item) {
             item->state_onf = REG_WAIT;
             item->state = REG_BUSY;
             if (item->heater.use && item->cooler.use) {
-                    if (SNSR_VAL > item->goal) {
-                        item->state_r = REG_COOLER;
-                    } else {
-                        item->state_r = REG_HEATER;
-                    }
+                if (SNSR_VAL > item->goal) {
+                    item->state_r = REG_COOLER;
+                } else {
+                    item->state_r = REG_HEATER;
+                }
             } else if (item->heater.use && !item->cooler.use) {
                 item->state_r = REG_HEATER;
             } else if (!item->heater.use && item->cooler.use) {
@@ -120,6 +130,9 @@ void regonfhc_control(RegOnfHC *item) {
                 }
                 controlEM(reg_em, item->output);
                 controlEM(reg_em_other, 0.0f);
+                if (reg_secureNeed(&item->secure_out)) {
+                    item->state = REG_SECURE;
+                }
             } else {
                 if (item->snsrf_count > SNSRF_COUNT_MAX) {
                     controlEM(&item->heater, 0.0f);
@@ -138,6 +151,13 @@ void regonfhc_control(RegOnfHC *item) {
             }
             break;
         }
+        case REG_SECURE:
+            controlEM(&item->heater, item->secure_out.heater_duty_cycle);
+            controlEM(&item->cooler, item->secure_out.cooler_duty_cycle);
+            if (!reg_secureNeed(&item->secure_out)) {
+                item->state = REG_BUSY;
+            }
+            break;
         case REG_DISABLE:
             controlEM(&item->heater, 0.0f);
             controlEM(&item->cooler, 0.0f);
@@ -160,7 +180,7 @@ void regonfhc_control(RegOnfHC *item) {
     char *state_r = reg_getStateStr(item->state_r);
     char *state_onf = reg_getStateStr(item->state_onf);
     struct timespec tm1 = getTimeRestTmr(item->change_gap, item->tmr);
-    printf("state=%s state_onf=%s EM_state=%s goal=%.1f delta_h=%.1f delta_c=%.1f real=%.1f real_st=%d out=%.1f change_time=%ldsec\n", state, state_onf, state_r, item->goal, item->heater.delta, item->cooler.delta, SNSR_VAL, item->sensor.value.state, item->output, tm1.tv_sec);
+    printf("state=%s state_onf=%s EM_state=%s goal=%.1f delta_h/c=%.1f/%.1f real=%.1f real_st=%d out=%.1f change_time=%ldsec\n", state, state_onf, state_r, item->goal, item->heater.delta, item->cooler.delta, SNSR_VAL, item->sensor.value.state, item->output, tm1.tv_sec);
 #endif
 }
 
@@ -173,7 +193,7 @@ void regonfhc_disable(RegOnfHC *item) {
 }
 
 int regonfhc_getEnabled(const RegOnfHC *item) {
-    if(item->state==REG_DISABLE || item->state==REG_OFF){
+    if (item->state == REG_DISABLE || item->state == REG_OFF) {
         return 0;
     }
     return 1;
@@ -195,11 +215,11 @@ void regonfhc_setHeaterDelta(RegOnfHC *item, float value) {
 
 void regonfhc_setGoal(RegOnfHC *item, float value) {
     item->goal = value;
-/*
-    if (item->state == REG_BUSY) {
-        item->state = REG_INIT;
-    }
-*/
+    /*
+        if (item->state == REG_BUSY) {
+            item->state = REG_INIT;
+        }
+     */
 }
 
 void regonfhc_setChangeGap(RegOnfHC *item, int value) {
@@ -244,4 +264,8 @@ void regonfhc_turnOff(RegOnfHC *item) {
     item->state = REG_OFF;
     controlEM(&item->cooler, 0.0f);
     controlEM(&item->heater, 0.0f);
+}
+
+void regonfhc_secureOutTouch(RegOnfHC *item) {
+    reg_secureTouch(&item->secure_out);
 }

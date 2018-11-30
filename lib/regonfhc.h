@@ -4,6 +4,7 @@
 #include "timef.h"
 #include "acp/main.h"
 #include "reg.h"
+#include "green_light.h"
 
 typedef struct {
     EM em;
@@ -19,7 +20,9 @@ typedef struct {
     RegOnfHCEM cooler;
     float goal;
     struct timespec change_gap;
-
+    RegSecure secure_out;
+    GreenLight green_light;
+    
     char state;
     char state_r;
     char state_onf;
@@ -51,6 +54,8 @@ extern void regonfhc_setCoolerPower(RegOnfHC *item, float value);
 extern void regonfhc_setEMMode(RegOnfHC *item, const char * value);
 
 extern void regonfhc_turnOff(RegOnfHC *item);
+
+extern void regonfhc_secureOutTouch(RegOnfHC *item);
 
 #endif 
 

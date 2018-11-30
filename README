@@ -17,6 +17,8 @@ cd udpcl
 sudo ./build.sh full
 
 2 Запуск
-пример:
+примеры:
 udpcl ahl '' 192.168.1.250 49161 2
+udpcl gfts '1\n2\n' 127.0.0.1 49161 2
+
 

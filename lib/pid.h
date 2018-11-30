@@ -3,6 +3,9 @@
 #define LIBPAS_PID_H
 
 #include <stdlib.h>
+
+#include "common.h"
+
 #define PID_MODE_HEATER 'h'
 #define PID_MODE_COOLER 'c'
 #define PID_MODE_UNKNOWN 'u'
@@ -10,7 +13,7 @@
 #define PID_TUNE_NOISE 1.0f
 #define PID_TUNE_STEP 50.0f
 #define PID_TUNE_LOOP_BACK 20
-#define NANO_FACTOR 0.000000001
+
 
 
 

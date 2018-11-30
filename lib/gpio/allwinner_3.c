@@ -1,4 +1,3 @@
-
 #include "pinout.h"
 
 #define PIO_BASE (0x01C20800)
@@ -16,11 +15,11 @@
 
 extern char *physToGpio[];
 
-volatile uint32_t *gpio;
+static volatile uint32_t *gpio;
 
-volatile uint32_t *data_reg [PIN_NUM];
-volatile uint32_t *cfg_reg [PIN_NUM];
-volatile uint32_t *pull_reg [PIN_NUM];
+static volatile uint32_t *data_reg [PIN_NUM];
+static volatile uint32_t *cfg_reg [PIN_NUM];
+static volatile uint32_t *pull_reg [PIN_NUM];
 
 int data_offset [PIN_NUM];
 int cfg_offset [PIN_NUM];
@@ -150,13 +149,15 @@ int checkPin(int pin) {
 int gpioSetup() {
     int fd;
     if ((fd = open("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC)) < 0) {
-        perror("gpioSetup()");
+        fprintf(stderr, "%s(): ", __func__);
+        perror("open()");
         return 0;
     }
-    gpio = (volatile uint32_t *) mmap(0, BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CCU_BASE);
+    gpio =  mmap(0, BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, CCU_BASE);
     close(fd);
     if (gpio == MAP_FAILED) {
-        perror("gpioSetup(): mmap failed");
+        fprintf(stderr, "%s(): ", __func__);
+        perror("mmap()");
         return 0;
     }
     makeData();

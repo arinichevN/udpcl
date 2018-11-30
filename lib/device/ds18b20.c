@@ -33,42 +33,34 @@ float dsToFloat(uint16_t v) {
 }
 
 int ds18b20_read_scratchpad(int pin, const uint8_t *addr, uint8_t *sp) {
-    if (!onewire_match(pin, addr)) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "ds18b20_read_scratchpad: onewire_match() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
-#endif
+    if (!onewire_match_rom(pin, addr)) {
+        printde("onewire_match_rom() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
         return 0;
     }
     onewire_send_byte(pin, DS18B20_CMD_READ_SCRATCHPAD);
     uint8_t scratchpad[DS18B20_SCRATCHPAD_BYTE_NUM];
     uint8_t crc = 0;
-    int i;
-    for (i = 0; i < DS18B20_SCRATCHPAD_BYTE_NUM; i++) {
+    for (int i = 0; i < DS18B20_SCRATCHPAD_BYTE_NUM; i++) {
         scratchpad[i] = onewire_read_byte(pin);
         crc = onewire_crc_update(crc, scratchpad[i]);
     }
     if (onewire_read_byte(pin) != crc) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "ds18b20_read_scratchpad: scratchpad crc error where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
-#endif
+        printde("scratchpad crc error where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
         return 0;
     }
-    for (i = 0; i < DS18B20_SCRATCHPAD_BYTE_NUM; i++) {
+    for (int i = 0; i < DS18B20_SCRATCHPAD_BYTE_NUM; i++) {
         sp[i] = scratchpad[i];
     }
     return 1;
 }
 
 int ds18b20_write_scratchpad(int pin, const uint8_t *addr, const uint8_t *data) {
-    if (!onewire_match(pin, addr)) {
-#ifdef MODE_DEBUG
-        fprintf(stderr, "ds18b20_write_scratchpad: onewire_match() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
-#endif
+    if (!onewire_match_rom(pin, addr)) {
+        printde("onewire_match_rom() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
         return 0;
     }
     onewire_send_byte(pin, DS18B20_CMD_WRITE_SCRATCHPAD);
-    int i;
-    for (i = 0; i < DS18B20_EEPROM_BYTE_NUM; i++) {
+    for (int i = 0; i < DS18B20_EEPROM_BYTE_NUM; i++) {
         onewire_send_byte(pin, data[i]);
     }
     delayUsBusy(480);
@@ -76,10 +68,8 @@ int ds18b20_write_scratchpad(int pin, const uint8_t *addr, const uint8_t *data) 
 }
 
 int ds18b20_copy_scratchpad(int pin, const uint8_t *addr) {
-    if (!onewire_match(pin, addr)) {
-#ifdef MODE_DEBUG
-        fputs("ds18b20_copy_scratchpad: not match1\n", stderr);
-#endif
+    if (!onewire_match_rom(pin, addr)) {
+        putsde("not match\n");
         return 0;
     }
     onewire_send_byte(pin, DS18B20_CMD_COPY_SCRATCHPAD);
@@ -88,10 +78,8 @@ int ds18b20_copy_scratchpad(int pin, const uint8_t *addr) {
 }
 
 int ds18b20_recall(int pin, const uint8_t *addr) {
-    if (!onewire_match(pin, addr)) {
-#ifdef MODE_DEBUG
-        fputs("ds18b20_recall: not match1\n", stderr);
-#endif
+    if (!onewire_match_rom(pin, addr)) {
+        putsde("not match\n");
         return 0;
     }
     onewire_send_byte(pin, DS18B20_CMD_RECALL);
@@ -127,9 +115,7 @@ int ds18b20_set_resolution(int pin, const uint8_t *addr, uint8_t res) {
         return 0;
     }
     if (scratchpad[DS18B20_SCRATCHPAD_CONFIG_REG] != res) {
-#ifdef MODE_DEBUG
-        fputs("ds18b20_set_resolution: check-up failed\n", stderr);
-#endif
+        putsde("check-up failed\n");
         return 0;
     }
     return 1;
@@ -163,17 +149,40 @@ int ds18b20_get_resolution(int pin, const uint8_t *addr, int *res) {
     }
 }
 
-int ds18b20_convert_t(int pin, const uint8_t *addr) {
-    if (!onewire_match(pin, addr)) {
-#ifdef MODE_DEBUG
-         fprintf(stderr, "ds18b20_convert_t: onewire_match() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
-#endif
-        return 0;
-    }
-    onewire_send_byte(pin, DS18B20_CMD_CONVERTT);
+void ds18b20_wait_convertion(int pin) {
     while (!onewire_read_bit(pin)) {
     }
     delayUsBusy(480);
+}
+
+int ds18b20_convert_t(int pin, const uint8_t *addr) {
+    if (!onewire_match_rom(pin, addr)) {
+        printde("onewire_match_rom() failed where pin = %d and address = %2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx\n", pin, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7]);
+        return 0;
+    }
+    onewire_send_byte(pin, DS18B20_CMD_CONVERTT);
+    ds18b20_wait_convertion(pin);
+    return 1;
+}
+
+int ds18b20_convert_t_all(int pin) {
+    if (!onewire_skip_rom(pin)) {
+        printde("onewire_skip_rom() failed where pin = %d\n", pin);
+        return 0;
+    }
+    onewire_send_byte(pin, DS18B20_CMD_CONVERTT);
+    return 1;
+}
+
+
+
+int ds18b20_read_temp(int pin, const uint8_t *addr, float * temp) {
+    uint8_t scratchpad[DS18B20_SCRATCHPAD_BYTE_NUM];
+    if (!ds18b20_read_scratchpad(pin, addr, scratchpad)) {
+        return 0;
+    }
+    uint16_t td = (scratchpad[1] << 8) | scratchpad[0];
+    *temp = dsToFloat(td);
     return 1;
 }
 
